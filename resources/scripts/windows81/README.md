@@ -49,7 +49,9 @@ compatibility even with patched Qt.
 Commit these changes to your fork, open Actions, select **Windows 8.1 XMPP
 candidates**, and run the workflow on that branch. It has separate `text` and
 `web` artifacts. These are portable ZIPs named `candidate` until native testing
-has passed. The existing Windows 7 and modern Windows release matrix is retained.
+has passed. The unrelated upstream platform matrix has been removed from this fork; only
+these two Windows 8.1 candidate builds run. Windows Server 2022 remains the
+compilation host, not the target operating system.
 
 The source build uses substantial resources, especially Chromium. The workflow
 allows six hours per variant. A hosted runner's available disk, memory or time
@@ -135,3 +137,10 @@ clones and recursive Qt checkouts, and the repository attributes preserve LF
 for compatibility patches. With CRLF-converted source, `git apply --check`
 rejects the matching patch despite the correct source revision. Use a fresh
 work directory after changing these checkout settings.
+
+The Windows build host must install ATL for the same 14.38 MSVC toolset;
+Chromium includes `atldef.h`. The workflow checks this before building Qt.
+Packaged PubSub tests write a JUnit XML report explicitly because QtTest's
+default Windows logger need not write to redirected stdout. Validation requires
+both protocol and certificate-rejection test cases to have executed without
+failures or skips. Failure artifacts retain that report and validation logs.

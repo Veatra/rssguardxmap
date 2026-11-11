@@ -70,7 +70,12 @@ function Probe([string]$Exe, [string]$Arguments, [string]$Marker = '') {
         throw "$Exe failed (exit $($process.ExitCode)); logs: $temporary"
     }
 }
-Probe 'test_xmpp_pubsub.exe' '--plugin plugins/rssguard-xmpp.dll' '0 failed'
+# QtTest's Windows default logger may use the debugger instead of stdout.
+# Require an explicit report from this run, including both substantive tests.
+$report = Join-Path $temporary 'pubsub.xml'
+Probe 'test_xmpp_pubsub.exe' ('--plugin plugins/rssguard-xmpp.dll -o "' + $report + ',junitxml"')
+. (Join-Path $PSScriptRoot 'assert-pubsub-report.ps1')
+Assert-PubSubReport $report
 Probe 'rssguard-package-smoke.exe' ('--data "' + (Join-Path $temporary 'profile') + '" --debug') ('RSSGUARD_PACKAGE_SMOKE_OK:' + $manifest.viewer)
 Probe 'rssguard-article-extractor.exe' '--help' 'Usage of'
 $result = [ordered]@{ os = $os; targetOsTested = ($os -like '6.3.*'); viewer = $manifest.viewer;

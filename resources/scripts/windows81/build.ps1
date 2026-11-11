@@ -78,7 +78,8 @@ if (!(Test-Path "$qt\bin\qmake.exe")) {
             $modules,
             '-opengl', 'desktop', '-openssl-linked', '--', "-DOPENSSL_ROOT_DIR=$ssl",
             '-DQT_FEATURE_sql_mysql=OFF', '-DQT_FEATURE_sql_odbc=OFF', '-DQT_FEATURE_sql_psql=OFF',
-            '-DQT_FEATURE_ffmpeg=OFF', '-DQT_FEATURE_wmf=OFF')
+            '-DQT_FEATURE_ffmpeg=OFF', '-DQT_FEATURE_wmf=OFF',
+            '-DQT_FEATURE_assistant=OFF', '-DQT_FEATURE_designer=OFF', '-DQT_FEATURE_qdoc=OFF')
         Run cmake @('--build', '.', '--parallel', "$Jobs")
         Run cmake @('--install', '.')
     } finally { Pop-Location }
@@ -157,6 +158,7 @@ Invoke-WebRequest 'https://download.visualstudio.microsoft.com/download/pr/6ba40
 if ((Get-FileHash $redist -Algorithm SHA256).Hash -ne '1AD7988C17663CC742B01BEF1A6DF2ED1741173009579AD50A94434E54F56073') {
     throw 'Microsoft VC runtime installer checksum mismatch'
 }
+Copy-Item "$PSScriptRoot\assert-pubsub-report.ps1" $stage
 Copy-Item "$PSScriptRoot\validate.ps1" "$stage\validate-windows81.ps1"
 Copy-Item "$PSScriptRoot\README.md" "$stage\WINDOWS81.md"
 New-Item -ItemType Directory "$stage\licenses" | Out-Null

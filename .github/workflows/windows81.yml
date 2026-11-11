@@ -18,6 +18,9 @@ jobs:
         viewer: [text, web]
     steps:
       - uses: actions/checkout@v4
+      - name: Test package report validation
+        shell: pwsh
+        run: ./resources/scripts/windows81/tests/test-report.ps1
       - uses: actions/setup-go@v5
         with:
           go-version: '1.26.11'
@@ -26,12 +29,18 @@ jobs:
         run: |
           $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products '*' -property installationPath
           $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\setup.exe"
-          $process = Start-Process $installer -ArgumentList 'modify', '--installPath', "`"$vs`"", '--add', 'Microsoft.VisualStudio.Component.VC.14.38.17.8.x86.x64', '--quiet', '--norestart' -Wait -PassThru
+          $process = Start-Process $installer -ArgumentList 'modify', '--installPath', "`"$vs`"", '--add', 'Microsoft.VisualStudio.Component.VC.14.38.17.8.x86.x64', '--add', 'Microsoft.VisualStudio.Component.VC.14.38.17.8.ATL', '--quiet', '--norestart' -Wait -PassThru
           if ($process.ExitCode -notin @(0, 3010)) { throw "VS component install failed: $($process.ExitCode)" }
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
           toolset: '14.38'
+      - name: Verify pinned ATL headers
+        shell: pwsh
+        run: |
+          if (!(Test-Path "$env:VCToolsInstallDir\atlmfc\include\atldef.h")) {
+            throw 'The pinned MSVC 14.38 ATL component is missing'
+          }
       - name: Build patched Qt, Go, QXmpp, RSS Guard and validate the package
         shell: pwsh
         run: ./resources/scripts/windows81/build.ps1 -Work C:\rg81-${{ matrix.viewer }} -Viewer ${{ matrix.viewer }} -Jobs 4
@@ -48,3 +57,6 @@ jobs:
           path: |
             C:\rg81-${{ matrix.viewer }}\**\CMakeConfigureLog.yaml
             C:\rg81-${{ matrix.viewer }}\**\LastTest.log
+            ${{ runner.temp }}\rssguard81-*\validation.log
+            ${{ runner.temp }}\rssguard81-*\pubsub.xml
+            ${{ runner.temp }}\rssguard81-*\result.json
