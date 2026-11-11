@@ -55,8 +55,8 @@ The source build uses substantial resources, especially Chromium. The workflow
 allows six hours per variant. A hosted runner's available disk, memory or time
 can limit the web build; inspect the retained CMake/test logs before treating a
 failed build as a compatibility defect. A larger Windows build host can run the
-same script without changing the package. This pipeline has not yet been run
-on GitHub Actions from this development environment.
+same script without changing the package. Initial GitHub Actions runs reached dependency setup but failed before
+producing packages. Native compatibility and package validation remain pending.
 
 For a local modern Windows build, use an x64 VS 2022 developer shell with the
 14.38 compiler component, CMake 3.21+, Ninja, Python 3, Perl, Node.js and a Go
@@ -121,3 +121,17 @@ normal application shutdown. The patched Go 1.26.11 SDK built, extractor tests
 passed, and the extractor cross-compiled to Windows x64. PowerShell scripts
 passed PowerShell 7 parser checks. These results exercise application code,
 not the patched Windows Qt binaries or Windows PowerShell 5.1 execution.
+
+## Build prerequisites and line endings
+
+Qt dependencies must be initialized recursively: Qt Tools' Assistant uses the
+nested `qlitehtml` checkout and its attribution metadata during configuration.
+The build script initializes these nested dependencies rather than suppressing
+the missing-source or attribution errors.
+
+Keep dependency sources and the Chromium unified diff in LF form, even on a
+Windows build host. The script disables automatic CRLF conversion for source
+clones and recursive Qt checkouts, and the repository attributes preserve LF
+for compatibility patches. With CRLF-converted source, `git apply --check`
+rejects the matching patch despite the correct source revision. Use a fresh
+work directory after changing these checkout settings.

@@ -11,10 +11,12 @@ function Run([string]$Program, [string[]]$Arguments) {
     & $Program @Arguments
     if ($LASTEXITCODE -ne 0) { throw "$Program failed ($LASTEXITCODE)" }
 }
+# Keep source checkouts in LF form: the compatibility patch is checked
+# against upstream Git blobs, independently of the Windows Git defaults.
 function Source([string]$Name, [string]$Url, [string]$Commit) {
     $path = Join-Path $Work $Name
     if (!(Test-Path "$path\.git")) {
-        Run git @('clone', '--no-checkout', $Url, $path)
+        Run git @('clone', '--config', 'core.autocrlf=false', '--no-checkout', $Url, $path)
         Run git @('-C', $path, 'checkout', '--detach', $Commit)
     }
     $actual = (& git -C $path rev-parse HEAD).Trim()
@@ -36,12 +38,12 @@ $ssl = "$Work\openssl"
 # No binary overlays: patch exactly the matching Qt source module, then build
 # one coherent SDK. Plugins and QXmpp are subsequently compiled against it.
 if (!(Test-Path "$qt\bin\qmake.exe")) {
-    Run git @('-C', $qtSource, 'submodule', 'update', '--init', '--depth', '1',
+    Run git @('-c', 'core.autocrlf=false', '-C', $qtSource, 'submodule', 'update', '--init', '--recursive', '--depth', '1',
         'qtbase', 'qtdeclarative', 'qtshadertools', 'qtmultimedia', 'qttools', 'qtsvg', 'qtimageformats', 'qt5compat')
     Copy-Item "$compat\qtbase\*" "$qtSource\qtbase" -Recurse -Force
     $modules = 'qtbase,qtdeclarative,qtshadertools,qtmultimedia,qttools,qtsvg,qtimageformats,qt5compat'
     if ($Viewer -eq 'web') {
-        Run git @('-C', $qtSource, 'submodule', 'update', '--init', '--recursive', '--depth', '1',
+        Run git @('-c', 'core.autocrlf=false', '-C', $qtSource, 'submodule', 'update', '--init', '--recursive', '--depth', '1',
             'qtwebengine', 'qtwebchannel', 'qtpositioning')
         # A reviewed source port to Qt 6.8.3, derived from crystalidea's newer
         # Chromium compatibility work. Fail on mismatched source, never overlay DLLs.

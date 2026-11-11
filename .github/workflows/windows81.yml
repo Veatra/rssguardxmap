@@ -2,7 +2,7 @@ name: Windows 8.1 XMPP candidates
 on:
   workflow_dispatch:
   push:
-    branches: ['win81-xmpp']
+    branches: ['master', 'win81-xmpp']
 permissions:
   contents: read
 jobs:
